@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tổng hợp Khen thưởng TVV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg: #F6F4EF;
+    --surface: #FFFFFF;
+    --ink: #201D1B;
+    --ink-soft: #6B6560;
+    --line: #E6E1D8;
+    --red: #A91E2C;
+    --red-deep: #7C1520;
+    --gold: #B98A2E;
+    --green: #3E6E52;
+    --green-bg: #EAF1EB;
+    --amber-bg: #FBF2DF;
+    --shadow: 0 1px 2px rgba(32,29,27,.04), 0 8px 24px rgba(32,29,27,.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:32px 28px 80px;}
+
+  /* Header */
+  header.top{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    gap:20px;margin-bottom:28px;border-bottom:2px solid var(--ink);padding-bottom:18px;
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .medal{width:40px;height:40px;flex:none;}
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:30px;letter-spacing:-.01em;margin:0;
+    line-height:1.05;
+  }
+  .sub{color:var(--ink-soft);font-size:13.5px;margin-top:4px;}
+  .badge-count{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--red);
+    border:1px solid var(--red);border-radius:999px;padding:5px 14px;white-space:nowrap;
+  }
+
+  /* Upload */
+  .dropzone{
+    background:var(--surface);border:1.5px dashed var(--line);border-radius:14px;
+    padding:26px;display:flex;align-items:center;gap:18px;cursor:pointer;transition:.15s;
+    box-shadow:var(--shadow);
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--red);background:#FFFBF9;}
+  .dropzone .icon{
+    width:46px;height:46px;border-radius:10px;background:var(--red);color:#fff;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+  }
+  .dropzone .txt strong{font-size:15px;}
+  .dropzone .txt div{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  input[type=file]{display:none;}
+
+  .filelist{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+  .filechip{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:9px 12px;font-size:12.5px;display:flex;align-items:center;gap:9px;box-shadow:var(--shadow);
+    max-width:340px;
+  }
+  .filechip.err{border-color:var(--red);background:#FFF4F3;}
+  .filechip .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:none;}
+  .filechip.err .dot{background:var(--red);}
+  .filechip .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+  .filechip .memo{color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;}
+  .filechip button{
+    border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:14px;line-height:1;padding:2px;
+  }
+  .filechip button:hover{color:var(--red);}
+
+  /* Stats */
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:26px 0;}
+  .stat{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);
+  }
+  .stat .num{font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:var(--red-deep);}
+  .stat .lbl{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+
+  /* Controls */
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:18px;}
+  .controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);}
+  .field select, .field input[type=text]{
+    border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13.5px;font-family:inherit;
+    background:#FCFBF9;min-width:170px;color:var(--ink);
+  }
+  .field select:focus, .field input:focus{outline:none;border-color:var(--red);}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none;padding-bottom:9px;}
+  .toggle input{width:16px;height:16px;accent-color:var(--red);}
+  .spacer{flex:1;}
+  .tabs{display:flex;gap:6px;margin-left:auto;}
+  .tab-btn{
+    border:1px solid var(--line);background:#FCFBF9;border-radius:8px;padding:8px 14px;font-size:13px;
+    cursor:pointer;font-weight:600;color:var(--ink-soft);
+  }
+  .tab-btn.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .btn-export{
+    border:none;background:var(--red);color:#fff;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;
+    cursor:pointer;box-shadow:var(--shadow);
+  }
+  .btn-export:hover{background:var(--red-deep);}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);
+    padding:10px 12px;border-bottom:2px solid var(--ink);cursor:pointer;white-space:nowrap;position:sticky;top:0;background:var(--surface);
+  }
+  thead th:hover{color:var(--red);}
+  thead th .arrow{font-size:10px;margin-left:3px;opacity:.6;}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody tr:hover{background:#FBF8F2;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .tag-role{
+    display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EFEAE0;color:var(--ink-soft);
+  }
+  .reward-num{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--red-deep);}
+  .reward-check{
+    display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--green-bg);color:var(--green);
+  }
+  .reward-none{color:var(--ink-soft);}
+  .memo-title{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom;}
+  .table-wrap{max-height:640px;overflow:auto;border-radius:10px;}
+  .empty{padding:60px 20px;text-align:center;color:var(--ink-soft);}
+  .empty .big{font-family:'Fraunces',serif;font-size:20px;color:var(--ink);margin-bottom:6px;}
+  .pager{display:flex;justify-content:space-between;align-items:center;padding:12px 4px 0;font-size:12.5px;color:var(--ink-soft);}
+  .pager button{
+    border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12.5px;
+  }
+  .pager button:disabled{opacity:.4;cursor:default;}
+
+  /* Grouped-by-TVV view */
+  .tvv-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow);
+  }
+  .tvv-head{
+    display:flex;align-items:center;gap:14px;padding:13px 16px;cursor:pointer;
+  }
+  .tvv-head:hover{background:#FBF8F2;}
+  .tvv-head .name{font-weight:700;font-size:14px;}
+  .tvv-head .meta{font-size:12px;color:var(--ink-soft);}
+  .tvv-head .spacer{flex:1;}
+  .tvv-head .sum{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--red-deep);font-size:14px;}
+  .tvv-head .count{font-size:11.5px;background:var(--amber-bg);color:var(--gold);padding:2px 9px;border-radius:999px;font-weight:600;}
+  .tvv-body{border-top:1px solid var(--line);padding:0 16px;}
+  .tvv-body table{font-size:12.5px;}
+  .chev{transition:.15s;color:var(--ink-soft);}
+  .chev.open{transform:rotate(90deg);}
+
+  .footer-note{margin-top:26px;font-size:11.5px;color:var(--ink-soft);text-align:center;}
+  @media (max-width:900px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .controls{flex-direction:column;align-items:stretch;}
+    .tabs{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <svg class="medal" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="19" r="13" fill="#A91E2C"/>
+        <circle cx="24" cy="19" r="8.5" fill="#F6F4EF"/>
+        <path d="M18 30 L14 44 L24 39 L34 44 L30 30" fill="#B98A2E"/>
+      </svg>
+      <div>
+        <h1>Tổng hợp Khen thưởng TVV</h1>
+        <div class="sub">Gộp nhiều file memo Excel · lọc theo Mã GA · xem khoản thưởng cuối cùng theo từng chương trình</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div class="badge-count" id="cloudStatus">☁ đang kết nối…</div>
+      <div class="badge-count" id="fileCountBadge">0 file đã tải</div>
+    </div>
+  </header>
+
+  <label class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" multiple accept=".xlsx,.xls">
+    <div class="icon">⇪</div>
+    <div class="txt">
+      <strong>Kéo thả nhiều file memo (.xlsx) vào đây, hoặc bấm để chọn file</strong>
+      <div>Hệ thống tự đọc sheet Summary / Summary_TVV, nhận diện Mã GA, Nhóm, MSDL, Tên TVV, Chức danh và Khoản thưởng cuối cùng.</div>
+    </div>
+  </label>
+
+  <div class="filelist" id="fileList"></div>
+
+  <div class="stats" id="stats" style="display:none;">
+    <div class="stat"><div class="num" id="statFiles">0</div><div class="lbl">Memo đã đọc</div></div>
+    <div class="stat"><div class="num" id="statRows">0</div><div class="lbl">Dòng dữ liệu</div></div>
+    <div class="stat"><div class="num" id="statGA">0</div><div class="lbl">Mã GA</div></div>
+    <div class="stat"><div class="num" id="statTVV">0</div><div class="lbl">TVV</div></div>
+    <div class="stat"><div class="num" id="statSum">0</div><div class="lbl">Tổng thưởng tiền (đ)</div></div>
+  </div>
+
+  <div id="mainArea" style="display:none;">
+    <div class="panel">
+      <div class="controls">
+        <div class="field">
+          <label>Mã GA</label>
+          <select id="filterGA"><option value="">Tất cả</option></select>
+        </div>
+        <div class="field">
+          <label>Nhóm</label>
+          <select id="filterUnit"><option value="">Tất cả</option></select>
+        </div>
+        <div class="field">
+          <label>Tìm MSDL / Tên TVV</label>
+          <input type="text" id="filterSearch" placeholder="Nhập MSDL hoặc tên...">
+        </div>
+        <div class="field">
+          <label>Memo</label>
+          <select id="filterMemo"><option value="">Tất cả</option></select>
+        </div>
+        <label class="toggle"><input type="checkbox" id="onlyRewarded" checked> Chỉ hiện có khoản thưởng</label>
+        <div class="spacer"></div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="detail">Bảng chi tiết</button>
+          <button class="tab-btn" data-tab="grouped">Theo TVV</button>
+        </div>
+        <button class="btn-export" id="btnExport">Xuất Excel</button>
+        <button class="btn-export" id="btnResync" style="background:var(--ink);">↻ Tải lại từ Cloud</button>
+      </div>
+    </div>
+
+    <div class="panel" id="tabDetail">
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="theadRow"></tr></thead>
+          <tbody id="tbodyDetail"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <span id="pageInfo"></span>
+        <div style="display:flex;gap:8px;">
+          <button id="prevPage">‹ Trước</button>
+          <button id="nextPage">Sau ›</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="tabGrouped" style="display:none;">
+      <div id="groupedList"></div>
+    </div>
+  </div>
+
+  <div class="empty" id="emptyState">
+    <div class="big">Chưa có dữ liệu</div>
+    Tải lên các file memo Excel để bắt đầu tổng hợp.
+  </div>
+
+  <div class="footer-note">File Excel được đọc ngay trên trình duyệt, sau đó dữ liệu đã tổng hợp (không phải file gốc) được lưu lên Firestore để mọi người cùng xem online.</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, setDoc, getDoc, getDocs,
+  deleteDoc, writeBatch, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCGOl8B-CEWq6rkqU9MLSAPEUyKjKWgiVg",
+  authDomain: "tong-hop-thi-dua.firebaseapp.com",
+  projectId: "tong-hop-thi-dua",
+  storageBucket: "tong-hop-thi-dua.firebasestorage.app",
+  messagingSenderId: "264264235744",
+  appId: "1:264264235744:web:f93c02ceb02d9adeb1ae85"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+const META_COL = 'memo_files';       // 1 doc / file: metadata
+const ROWS_COL = 'memo_files_rows';  // N docs / file: chunks of rows
+const CHUNK_SIZE = 400;
+
+function sanitizeId(name){ return name.replace(/[^a-zA-Z0-9_.-]/g,'_'); }
+function setCloudStatus(text, isErr){
+  const el = document.getElementById('cloudStatus');
+  el.textContent = text;
+  el.style.borderColor = isErr ? 'var(--red)' : 'var(--green)';
+  el.style.color = isErr ? 'var(--red)' : 'var(--green)';
+}
+
+async function deleteFileFromFirestore(name){
+  const id = sanitizeId(name);
+  const metaRef = doc(db, META_COL, id);
+  const metaSnap = await getDoc(metaRef);
+  const batch = writeBatch(db);
+  if(metaSnap.exists()){
+    const chunkCount = metaSnap.data().chunkCount || 0;
+    for(let i=0;i<chunkCount;i++){
+      batch.delete(doc(db, ROWS_COL, id+'_c'+i));
+    }
+  }
+  batch.delete(metaRef);
+  await batch.commit();
+}
+
+async function saveFileToFirestore(result){
+  const id = sanitizeId(result.name);
+  await deleteFileFromFirestore(result.name); // clear any previous version first
+  const chunks = [];
+  for(let i=0;i<result.rows.length;i+=CHUNK_SIZE){
+    chunks.push(result.rows.slice(i, i+CHUNK_SIZE));
+  }
+  const batch = writeBatch(db);
+  batch.set(doc(db, META_COL, id), {
+    name: result.name,
+    memoTitle: result.memoTitle,
+    sheet: result.sheet,
+    rowCount: result.rowCount,
+    chunkCount: chunks.length,
+    uploadedAt: serverTimestamp()
+  });
+  chunks.forEach((chunk, i)=>{
+    batch.set(doc(db, ROWS_COL, id+'_c'+i), { memoFile: result.name, chunkIndex: i, rows: chunk });
+  });
+  await batch.commit();
+}
+
+async function loadAllFromFirestore(){
+  setCloudStatus('☁ đang tải dữ liệu…', false);
+  const metaSnaps = await getDocs(collection(db, META_COL));
+  const loadedFiles = [];
+  let loadedRows = [];
+  for(const metaDoc of metaSnaps.docs){
+    const meta = metaDoc.data();
+    const chunkPromises = [];
+    for(let i=0;i<(meta.chunkCount||0);i++){
+      chunkPromises.push(getDoc(doc(db, ROWS_COL, metaDoc.id+'_c'+i)));
+    }
+    const chunkSnaps = await Promise.all(chunkPromises);
+    const rows = chunkSnaps
+      .filter(s=>s.exists())
+      .sort((a,b)=>a.data().chunkIndex - b.data().chunkIndex)
+      .flatMap(s=>s.data().rows);
+    loadedFiles.push({ name: meta.name, memoTitle: meta.memoTitle, sheet: meta.sheet, rowCount: meta.rowCount });
+    loadedRows = loadedRows.concat(rows);
+  }
+  files = loadedFiles;
+  allRows = loadedRows;
+  setCloudStatus('☁ đã đồng bộ · ' + files.length + ' file', false);
+}
+
+let allRows = [];       // {ga, unit, msdl, name, role, reward, rewardType, memoTitle, memoFile}
+let files = [];         // {name, memoTitle, sheet, rowCount, error}
+let sortState = {key:'ga', dir:1};
+let page = 0;
+const PAGE_SIZE = 60;
+let currentTab = 'detail';
+const openGroups = new Set();
+
+const COLS = [
+  {key:'ga', label:'Mã GA'},
+  {key:'unit', label:'Nhóm'},
+  {key:'msdl', label:'MSDL'},
+  {key:'name', label:'Tên TVV'},
+  {key:'role', label:'Chức danh'},
+  {key:'memoTitle', label:'Memo'},
+  {key:'reward', label:'Khoản thưởng cuối cùng'},
+];
+
+function normVN(s){
+  return (s===null||s===undefined) ? '' : s.toString()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/đ/gi,'d').toLowerCase().trim();
+}
+
+function matchHeader(norm, type){
+  if(type==='ga') return norm === 'ma ga';
+  if(type==='unit') return norm === 'nhom';
+  if(type==='msdl') return norm === 'ma tvv' || norm === 'ma so tvv' || norm.startsWith('ma so tvv') || norm==='msdl';
+  if(type==='name') return norm === 'ten tvv';
+  if(type==='role') return norm === 'chuc danh';
+  if(type==='reward') return norm.includes('khoan thuong cuoi cung');
+  return false;
+}
+
+function findHeaderRow(grid){
+  for(let r=0;r<Math.min(grid.length, 12);r++){
+    const row = grid[r] || [];
+    const norms = row.map(normVN);
+    if(norms.some(n=>n==='ma ga')) return r;
+  }
+  return -1;
+}
+
+function parseWorkbook(file){
+  return new Promise((resolve)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:'array'});
+        const sheetName = wb.SheetNames.find(n=>/summary/i.test(n)) || wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+        const grid = XLSX.utils.sheet_to_json(sheet, {header:1, defval:null, raw:true});
+        const headerRowIdx = findHeaderRow(grid);
+        if(headerRowIdx === -1){
+          resolve({name:file.name, error:'Không tìm thấy dòng tiêu đề (Mã GA) trong sheet '+sheetName});
+          return;
+        }
+        const headers = grid[headerRowIdx].map(normVN);
+        const colIdx = {};
+        ['ga','unit','msdl','name','role','reward'].forEach(type=>{
+          const idx = headers.findIndex(h=>matchHeader(h,type));
+          colIdx[type] = idx;
+        });
+        if(colIdx.ga === -1 || colIdx.msdl === -1){
+          resolve({name:file.name, error:'Thiếu cột Mã GA hoặc MSDL trong sheet '+sheetName});
+          return;
+        }
+        let memoTitle = null;
+        for(let r=0;r<headerRowIdx;r++){
+          const c0 = grid[r] && grid[r][0];
+          if(typeof c0 === 'string' && c0.trim().length>3 && /memo/i.test(c0)){ memoTitle = c0.trim(); break; }
+        }
+        if(!memoTitle){
+          for(let r=0;r<headerRowIdx;r++){
+            const c0 = grid[r] && grid[r][0];
+            if(typeof c0 === 'string' && c0.trim().length>3){ memoTitle = c0.trim(); break; }
+          }
+        }
+        if(!memoTitle) memoTitle = file.name.replace(/\.xlsx?$/i,'');
+
+        const rows = [];
+        for(let r=headerRowIdx+1;r<grid.length;r++){
+          const row = grid[r];
+          if(!row) continue;
+          const gaVal = colIdx.ga>-1 ? row[colIdx.ga] : null;
+          const msdlVal = colIdx.msdl>-1 ? row[colIdx.msdl] : null;
+          if(gaVal===null && msdlVal===null) continue;
+          const rewardRaw = colIdx.reward>-1 ? row[colIdx.reward] : null;
+          let rewardType = 'none';
+          let rewardVal = null;
+          if(rewardRaw!==null && rewardRaw!==undefined && rewardRaw!==''){
+            if(typeof rewardRaw === 'number'){ rewardType='number'; rewardVal=rewardRaw; }
+            else{ rewardType='mark'; rewardVal = rewardRaw.toString().trim(); }
+          }
+          rows.push({
+            ga: gaVal!==null? gaVal.toString().trim() : '',
+            unit: colIdx.unit>-1 && row[colIdx.unit]!==null ? row[colIdx.unit].toString().trim() : '',
+            msdl: msdlVal!==null? msdlVal.toString().trim() : '',
+            name: colIdx.name>-1 && row[colIdx.name]!==null ? row[colIdx.name].toString().trim() : '',
+            role: colIdx.role>-1 && row[colIdx.role]!==null ? row[colIdx.role].toString().trim() : '',
+            reward: rewardVal,
+            rewardType: rewardType,
+            memoTitle: memoTitle,
+            memoFile: file.name,
+          });
+        }
+        resolve({name:file.name, memoTitle, sheet:sheetName, rowCount:rows.length, rows});
+      }catch(err){
+        resolve({name:file.name, error:'Lỗi đọc file: '+err.message});
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function handleFiles(fileListInput){
+  const arr = Array.from(fileListInput);
+  for(const f of arr){
+    const existingIdx = files.findIndex(x=>x.name===f.name);
+    const result = await parseWorkbook(f);
+    if(existingIdx>-1){
+      allRows = allRows.filter(r=>r.memoFile !== f.name);
+      files.splice(existingIdx,1);
+    }
+    files.push(result);
+    if(!result.error){
+      allRows = allRows.concat(result.rows);
+      render();
+      setCloudStatus('☁ đang lưu ' + f.name + '…', false);
+      try{
+        await saveFileToFirestore(result);
+        setCloudStatus('☁ đã đồng bộ · ' + files.filter(x=>!x.error).length + ' file', false);
+      }catch(err){
+        setCloudStatus('☁ lỗi lưu: ' + err.message, true);
+      }
+    }
+  }
+  page = 0;
+  render();
+}
+
+document.getElementById('fileInput').addEventListener('change', (e)=>handleFiles(e.target.files));
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e=>{e.preventDefault(); dz.classList.add('drag');});
+dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+});
+
+async function removeFile(name){
+  files = files.filter(f=>f.name!==name);
+  allRows = allRows.filter(r=>r.memoFile!==name);
+  render();
+  setCloudStatus('☁ đang xóa ' + name + '…', false);
+  try{
+    await deleteFileFromFirestore(name);
+    setCloudStatus('☁ đã đồng bộ · ' + files.filter(x=>!x.error).length + ' file', false);
+  }catch(err){
+    setCloudStatus('☁ lỗi xóa: ' + err.message, true);
+  }
+}
+
+function renderFileList(){
+  const el = document.getElementById('fileList');
+  el.innerHTML = '';
+  files.forEach(f=>{
+    const chip = document.createElement('div');
+    chip.className = 'filechip' + (f.error? ' err':'');
+    chip.innerHTML = `
+      <div class="dot"></div>
+      <div>
+        <div class="name" title="${f.name}">${f.name}</div>
+        <div class="memo" title="${f.error? f.error : f.memoTitle}">${f.error? f.error : (f.memoTitle+' · '+f.rowCount+' dòng')}</div>
+      </div>
+      <button title="Gỡ file">✕</button>
+    `;
+    chip.querySelector('button').onclick = ()=>removeFile(f.name);
+    el.appendChild(chip);
+  });
+  document.getElementById('fileCountBadge').textContent = files.length + ' file đã tải';
+}
+
+function uniqueSorted(arr){ return Array.from(new Set(arr.filter(v=>v!==''))).sort((a,b)=>a.localeCompare(b,'vi')); }
+
+function populateFilters(){
+  const gaSel = document.getElementById('filterGA');
+  const unitSel = document.getElementById('filterUnit');
+  const memoSel = document.getElementById('filterMemo');
+  const curGA = gaSel.value, curUnit = unitSel.value, curMemo = memoSel.value;
+
+  const gaList = uniqueSorted(allRows.map(r=>r.ga));
+  const unitList = uniqueSorted(allRows.map(r=>r.unit));
+  const memoList = uniqueSorted(allRows.map(r=>r.memoTitle));
+
+  gaSel.innerHTML = '<option value="">Tất cả</option>' + gaList.map(g=>`<option value="${g}">${g}</option>`).join('');
+  unitSel.innerHTML = '<option value="">Tất cả</option>' + unitList.map(g=>`<option value="${g}">${g}</option>`).join('');
+  memoSel.innerHTML = '<option value="">Tất cả</option>' + memoList.map(g=>`<option value="${g}">${g}</option>`).join('');
+
+  if(gaList.includes(curGA)) gaSel.value = curGA;
+  if(unitList.includes(curUnit)) unitSel.value = curUnit;
+  if(memoList.includes(curMemo)) memoSel.value = curMemo;
+}
+
+function getFiltered(){
+  const ga = document.getElementById('filterGA').value;
+  const unit = document.getElementById('filterUnit').value;
+  const memo = document.getElementById('filterMemo').value;
+  const search = normVN(document.getElementById('filterSearch').value);
+  const onlyRewarded = document.getElementById('onlyRewarded').checked;
+
+  return allRows.filter(r=>{
+    if(ga && r.ga !== ga) return false;
+    if(unit && r.unit !== unit) return false;
+    if(memo && r.memoTitle !== memo) return false;
+    if(onlyRewarded && r.rewardType==='none') return false;
+    if(search){
+      const hay = normVN(r.msdl) + ' ' + normVN(r.name);
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+}
+
+function sortRows(rows){
+  const {key, dir} = sortState;
+  return rows.slice().sort((a,b)=>{
+    let va = a[key], vb = b[key];
+    if(key==='reward'){
+      va = a.rewardType==='number'? a.reward : (a.rewardType==='mark'? Infinity*0.5 : -1);
+      vb = b.rewardType==='number'? b.reward : (b.rewardType==='mark'? Infinity*0.5 : -1);
+      return (va-vb)*dir;
+    }
+    va = (va||'').toString(); vb = (vb||'').toString();
+    return va.localeCompare(vb,'vi')*dir;
+  });
+}
+
+function fmtReward(r){
+  if(r.rewardType==='number') return `<span class="reward-num">${r.reward.toLocaleString('vi-VN')} đ</span>`;
+  if(r.rewardType==='mark') return `<span class="reward-check">✓ ${r.reward==='ü' || r.reward==='true'? 'Đạt' : r.reward}</span>`;
+  return `<span class="reward-none">—</span>`;
+}
+
+function renderStats(){
+  const filesOk = files.filter(f=>!f.error).length;
+  document.getElementById('statFiles').textContent = filesOk;
+  document.getElementById('statRows').textContent = allRows.length.toLocaleString('vi-VN');
+  document.getElementById('statGA').textContent = uniqueSorted(allRows.map(r=>r.ga)).length;
+  document.getElementById('statTVV').textContent = uniqueSorted(allRows.map(r=>r.msdl)).length;
+  const sum = allRows.reduce((s,r)=> s + (r.rewardType==='number'? r.reward:0), 0);
+  document.getElementById('statSum').textContent = sum.toLocaleString('vi-VN');
+}
+
+function renderHeader(){
+  const tr = document.getElementById('theadRow');
+  tr.innerHTML = COLS.map(c=>{
+    const arrow = sortState.key===c.key ? (sortState.dir===1?'▲':'▼') : '';
+    return `<th data-key="${c.key}">${c.label}<span class="arrow">${arrow}</span></th>`;
+  }).join('');
+  tr.querySelectorAll('th').forEach(th=>{
+    th.onclick = ()=>{
+      const key = th.dataset.key;
+      if(sortState.key===key) sortState.dir *= -1; else { sortState.key=key; sortState.dir=1; }
+      page = 0;
+      renderDetailTable();
+    };
+  });
+}
+
+function renderDetailTable(){
+  renderHeader();
+  const filtered = sortRows(getFiltered());
+  const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
+  page = Math.min(page, totalPages-1);
+  const pageRows = filtered.slice(page*PAGE_SIZE, page*PAGE_SIZE+PAGE_SIZE);
+
+  const tbody = document.getElementById('tbodyDetail');
+  if(pageRows.length===0){
+    tbody.innerHTML = `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--ink-soft);padding:30px;">Không có dòng nào khớp bộ lọc</td></tr>`;
+  } else {
+    tbody.innerHTML = pageRows.map(r=>`
+      <tr>
+        <td class="mono">${r.ga}</td>
+        <td>${r.unit}</td>
+        <td class="mono">${r.msdl}</td>
+        <td>${r.name}</td>
+        <td><span class="tag-role">${r.role}</span></td>
+        <td><span class="memo-title" title="${r.memoTitle}">${r.memoTitle}</span></td>
+        <td>${fmtReward(r)}</td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('pageInfo').textContent =
+    `${filtered.length.toLocaleString('vi-VN')} dòng · Trang ${page+1}/${totalPages}`;
+  document.getElementById('prevPage').disabled = page<=0;
+  document.getElementById('nextPage').disabled = page>=totalPages-1;
+}
+
+function renderGrouped(){
+  const filtered = getFiltered();
+  const byTvv = new Map();
+  filtered.forEach(r=>{
+    if(!byTvv.has(r.msdl)) byTvv.set(r.msdl, {msdl:r.msdl, name:r.name, ga:r.ga, unit:r.unit, role:r.role, items:[]});
+    byTvv.get(r.msdl).items.push(r);
+  });
+  const groups = Array.from(byTvv.values()).sort((a,b)=>b.items.length - a.items.length || a.name.localeCompare(b.name,'vi'));
+
+  const el = document.getElementById('groupedList');
+  if(groups.length===0){
+    el.innerHTML = `<div style="text-align:center;color:var(--ink-soft);padding:40px;">Không có TVV nào khớp bộ lọc</div>`;
+    return;
+  }
+  el.innerHTML = groups.map(g=>{
+    const total = g.items.reduce((s,r)=>s+(r.rewardType==='number'?r.reward:0),0);
+    const isOpen = openGroups.has(g.msdl);
+    return `
+    <div class="tvv-card">
+      <div class="tvv-head" data-msdl="${g.msdl}">
+        <span class="chev ${isOpen?'open':''}">▶</span>
+        <div>
+          <div class="name">${g.name} <span class="tag-role" style="margin-left:6px;">${g.role}</span></div>
+          <div class="meta">MSDL ${g.msdl} · GA ${g.ga} · Nhóm ${g.unit}</div>
+        </div>
+        <div class="spacer"></div>
+        <span class="count">${g.items.length} khoản</span>
+        <span class="sum">${total>0? total.toLocaleString('vi-VN')+' đ' : ''}</span>
+      </div>
+      <div class="tvv-body" style="display:${isOpen?'block':'none'};">
+        <table>
+          <thead><tr><th>Memo</th><th>Khoản thưởng cuối cùng</th></tr></thead>
+          <tbody>
+            ${g.items.map(r=>`<tr><td>${r.memoTitle}</td><td>${fmtReward(r)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.tvv-head').forEach(h=>{
+    h.onclick = ()=>{
+      const msdl = h.dataset.msdl;
+      if(openGroups.has(msdl)) openGroups.delete(msdl); else openGroups.add(msdl);
+      renderGrouped();
+    };
+  });
+}
+
+function render(){
+  renderFileList();
+  const hasData = allRows.length>0;
+  document.getElementById('stats').style.display = files.length? 'grid':'none';
+  document.getElementById('mainArea').style.display = hasData? 'block':'none';
+  document.getElementById('emptyState').style.display = hasData? 'none':'block';
+  if(!hasData) return;
+  renderStats();
+  populateFilters();
+  renderDetailTable();
+  renderGrouped();
+}
+
+['filterGA','filterUnit','filterMemo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{ page=0; renderDetailTable(); renderGrouped(); });
+});
+document.getElementById('filterSearch').addEventListener('input', ()=>{ page=0; renderDetailTable(); renderGrouped(); });
+document.getElementById('onlyRewarded').addEventListener('change', ()=>{ page=0; renderDetailTable(); renderGrouped(); });
+document.getElementById('prevPage').addEventListener('click', ()=>{ page=Math.max(0,page-1); renderDetailTable(); });
+document.getElementById('nextPage').addEventListener('click', ()=>{ page+=1; renderDetailTable(); });
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab = btn.dataset.tab;
+    document.getElementById('tabDetail').style.display = currentTab==='detail'? 'block':'none';
+    document.getElementById('tabGrouped').style.display = currentTab==='grouped'? 'block':'none';
+  });
+});
+
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const filtered = sortRows(getFiltered());
+  const data = filtered.map(r=>({
+    'Mã GA': r.ga, 'Nhóm': r.unit, 'MSDL': r.msdl, 'Tên TVV': r.name, 'Chức danh': r.role,
+    'Memo': r.memoTitle,
+    'Khoản thưởng cuối cùng': r.rewardType==='number'? r.reward : (r.rewardType==='mark'? r.reward : '')
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tong hop');
+  XLSX.writeFile(wb, 'tong_hop_khen_thuong_tvv.xlsx');
+});
+
+document.getElementById('btnResync').addEventListener('click', async ()=>{
+  try{
+    await loadAllFromFirestore();
+    page = 0;
+    render();
+  }catch(err){
+    setCloudStatus('☁ lỗi tải: ' + err.message, true);
+  }
+});
+
+// Tải dữ liệu đã tổng hợp sẵn trên Cloud ngay khi mở trang
+(async ()=>{
+  try{
+    await loadAllFromFirestore();
+    render();
+  }catch(err){
+    setCloudStatus('☁ lỗi kết nối: ' + err.message, true);
+  }
+})();
+</script>
+</body>
+</html>
