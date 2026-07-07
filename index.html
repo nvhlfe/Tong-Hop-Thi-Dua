@@ -214,6 +214,7 @@
         <div class="field">
           <label>Mã GA</label>
           <select id="filterGA"><option value="">Tất cả</option></select>
+          <div id="gaInfo" style="font-size:11.5px;color:var(--ink-soft);min-height:14px;"></div>
         </div>
         <div class="field">
           <label>Nhóm</label>
@@ -368,6 +369,7 @@ const openGroups = new Set();
 
 const COLS = [
   {key:'ga', label:'Mã GA'},
+  {key:'office', label:'Mã Văn Phòng'},
   {key:'unit', label:'Nhóm'},
   {key:'msdl', label:'MSDL'},
   {key:'name', label:'Tên TVV'},
@@ -384,6 +386,7 @@ function normVN(s){
 
 function matchHeader(norm, type){
   if(type==='ga') return norm === 'ma ga';
+  if(type==='office') return norm === 'ma van phong';
   if(type==='unit') return norm === 'nhom';
   if(type==='msdl') return norm === 'ma tvv' || norm === 'ma so tvv' || norm.startsWith('ma so tvv') || norm==='msdl';
   if(type==='name') return norm === 'ten tvv';
@@ -418,7 +421,7 @@ function parseWorkbook(file){
         }
         const headers = grid[headerRowIdx].map(normVN);
         const colIdx = {};
-        ['ga','unit','msdl','name','role','reward'].forEach(type=>{
+        ['ga','office','unit','msdl','name','role','reward'].forEach(type=>{
           const idx = headers.findIndex(h=>matchHeader(h,type));
           colIdx[type] = idx;
         });
@@ -455,6 +458,7 @@ function parseWorkbook(file){
           }
           rows.push({
             ga: gaVal!==null? gaVal.toString().trim() : '',
+            office: colIdx.office>-1 && row[colIdx.office]!==null ? row[colIdx.office].toString().trim() : '',
             unit: colIdx.unit>-1 && row[colIdx.unit]!==null ? row[colIdx.unit].toString().trim() : '',
             msdl: msdlVal!==null? msdlVal.toString().trim() : '',
             name: colIdx.name>-1 && row[colIdx.name]!==null ? row[colIdx.name].toString().trim() : '',
@@ -551,16 +555,26 @@ function populateFilters(){
   const curGA = gaSel.value, curUnit = unitSel.value, curMemo = memoSel.value;
 
   const gaList = uniqueSorted(allRows.map(r=>r.ga));
-  const unitList = uniqueSorted(allRows.map(r=>r.unit));
   const memoList = uniqueSorted(allRows.map(r=>r.memoTitle));
+  // Nhóm chỉ hiện các nhóm thuộc Mã GA đang chọn (nếu có chọn)
+  const unitSource = curGA ? allRows.filter(r=>r.ga===curGA) : allRows;
+  const unitList = uniqueSorted(unitSource.map(r=>r.unit));
 
   gaSel.innerHTML = '<option value="">Tất cả</option>' + gaList.map(g=>`<option value="${g}">${g}</option>`).join('');
   unitSel.innerHTML = '<option value="">Tất cả</option>' + unitList.map(g=>`<option value="${g}">${g}</option>`).join('');
   memoSel.innerHTML = '<option value="">Tất cả</option>' + memoList.map(g=>`<option value="${g}">${g}</option>`).join('');
 
   if(gaList.includes(curGA)) gaSel.value = curGA;
-  if(unitList.includes(curUnit)) unitSel.value = curUnit;
+  if(unitList.includes(curUnit)) unitSel.value = curUnit; else unitSel.value = '';
   if(memoList.includes(curMemo)) memoSel.value = curMemo;
+
+  const gaInfo = document.getElementById('gaInfo');
+  if(curGA){
+    const offices = uniqueSorted(allRows.filter(r=>r.ga===curGA).map(r=>r.office));
+    gaInfo.textContent = offices.length ? 'Mã Văn Phòng: ' + offices.join(', ') : '';
+  } else {
+    gaInfo.textContent = '';
+  }
 }
 
 function getFiltered(){
@@ -643,6 +657,7 @@ function renderDetailTable(){
     tbody.innerHTML = pageRows.map(r=>`
       <tr>
         <td class="mono">${r.ga}</td>
+        <td class="mono">${r.office}</td>
         <td>${r.unit}</td>
         <td class="mono">${r.msdl}</td>
         <td>${r.name}</td>
@@ -662,7 +677,7 @@ function renderGrouped(){
   const filtered = getFiltered();
   const byTvv = new Map();
   filtered.forEach(r=>{
-    if(!byTvv.has(r.msdl)) byTvv.set(r.msdl, {msdl:r.msdl, name:r.name, ga:r.ga, unit:r.unit, role:r.role, items:[]});
+    if(!byTvv.has(r.msdl)) byTvv.set(r.msdl, {msdl:r.msdl, name:r.name, ga:r.ga, office:r.office, unit:r.unit, role:r.role, items:[]});
     byTvv.get(r.msdl).items.push(r);
   });
   const groups = Array.from(byTvv.values()).sort((a,b)=>b.items.length - a.items.length || a.name.localeCompare(b.name,'vi'));
@@ -681,7 +696,7 @@ function renderGrouped(){
         <span class="chev ${isOpen?'open':''}">▶</span>
         <div>
           <div class="name">${g.name} <span class="tag-role" style="margin-left:6px;">${g.role}</span></div>
-          <div class="meta">MSDL ${g.msdl} · GA ${g.ga} · Nhóm ${g.unit}</div>
+          <div class="meta">MSDL ${g.msdl} · GA ${g.ga}${g.office? ' · VP '+g.office : ''} · Nhóm ${g.unit}</div>
         </div>
         <div class="spacer"></div>
         <span class="count">${g.items.length} khoản</span>
@@ -720,7 +735,8 @@ function render(){
   renderGrouped();
 }
 
-['filterGA','filterUnit','filterMemo'].forEach(id=>{
+document.getElementById('filterGA').addEventListener('change', ()=>{ page=0; populateFilters(); renderDetailTable(); renderGrouped(); });
+['filterUnit','filterMemo'].forEach(id=>{
   document.getElementById(id).addEventListener('change', ()=>{ page=0; renderDetailTable(); renderGrouped(); });
 });
 document.getElementById('filterSearch').addEventListener('input', ()=>{ page=0; renderDetailTable(); renderGrouped(); });
@@ -741,7 +757,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 document.getElementById('btnExport').addEventListener('click', ()=>{
   const filtered = sortRows(getFiltered());
   const data = filtered.map(r=>({
-    'Mã GA': r.ga, 'Nhóm': r.unit, 'MSDL': r.msdl, 'Tên TVV': r.name, 'Chức danh': r.role,
+    'Mã GA': r.ga, 'Mã Văn Phòng': r.office, 'Nhóm': r.unit, 'MSDL': r.msdl, 'Tên TVV': r.name, 'Chức danh': r.role,
     'Memo': r.memoTitle,
     'Khoản thưởng cuối cùng': r.rewardType==='number'? r.reward : (r.rewardType==='mark'? r.reward : '')
   }));
